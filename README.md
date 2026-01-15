@@ -12,7 +12,7 @@ Sistema de simulação de plataforma de streaming com arquitetura de microsservi
   - `playlists.py`: Gerencia playlists dos usuários
   - `usuarios.py`: Gerencia perfis e histórico de reprodução
 
-## 🚀 Como Executar
+## Como Executar
 
 ### Pré-requisitos
 
@@ -77,6 +77,6 @@ RabbitMQ medeia toda comunicação entre componentes.
 - `playlists_queue`: Gerencia playlists
 - `usuarios_queue`: Gerencia perfis e histórico
 
-## 📦 Dependências
+## Dependências
 
 - `pika==1.3.2`: Cliente Python para RabbitMQ
