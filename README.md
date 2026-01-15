@@ -1,43 +1,82 @@
 # Sistema de Streaming Distribuído
 
-Este é um projeto de simulação de uma plataforma de streaming utilizando uma arquitetura de serviços distribuídos em Python com RabbitMQ.
+Sistema de simulação de plataforma de streaming com arquitetura de microsserviços distribuídos em Python usando RabbitMQ como broker de mensagens.
 
-## Arquitetura
+### Componentes
 
-O sistema é composto por:
+- **Client** (`client.py`): Interface CLI para simular requisições de usuário
+- **Gateway** (`gateway.py`): Middleware que roteia requisições para os serviços apropriados
+- **Messaging** (`messaging.py`): Biblioteca de abstração para RPC e comunicação assíncrona via RabbitMQ
+- **Serviços** (`services/`):
+  - `catalogo.py`: Gerencia o catálogo de músicas
+  - `playlists.py`: Gerencia playlists dos usuários
+  - `usuarios.py`: Gerencia perfis e histórico de reprodução
 
-- **Gateway**: Middleware central que coordena as requisições entre o cliente e os serviços.
-- **Serviços (Services/)**: Processos independentes para Catálogo, Playlists e Usuários/Histórico.
-- **Messaging utility**: Abstração da biblioteca `pika` para facilitar RPC e chamadas assíncronas.
-- **Client**: Simulador CLI para interação do usuário.
-
-## Como Executar
+## 🚀 Como Executar
 
 ### Pré-requisitos
 
 - Python 3.10+
-- RabbitMQ instalado e rodando (localhost:5672)
+- RabbitMQ rodando em `localhost:5672`
 
-### Configuração do Ambiente
+### Instalação Rápida
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+
+#Aqui ele executa todos os serviços simultaneamente
+chmod +x start.sh
+./start.sh
 ```
 
-### Execução dos Componentes
+### Execução Manual
 
-Abra um terminal para cada comando abaixo (garanta que o `venv` esteja ativado):
+Abra **5 terminais** separados e execute (com venv ativado):
 
-1. **Catálogo**: `python services/catalogo.py`
-2. **Usuários**: `python services/usuarios.py`
-3. **Playlists**: `python services/playlists.py`
-4. **Gateway**: `python gateway.py`
-5. **Cliente**: `python client.py`
+```bash
+python services/catalogo.py
+python services/usuarios.py
+python services/playlists.py
+python gateway.py
+python client.py
+```
 
-## Padrões de Comunicação Demonstrados
+## 🔄 Conceitos de Sistemas Distribuídos Implementados
 
-- **RPC (Remote Procedure Call)**: Utilizado em quase todas as consultas (ex: Listar músicas, ver perfil) onde o cliente espera uma resposta do serviço.
-- **Comunicação Assíncrona**: O registro de histórico de reprodução é enviado de forma assíncrona pelo Gateway para o serviço de usuários, permitindo que o cliente continue sua experiência sem esperar a confirmação do log.
-- **Comunicação Indireta**: O Broker (RabbitMQ) desacopla os serviços, permitindo que cada um rode em seu próprio processo.
+### 1. **RPC (Remote Procedure Call)**
+
+Chamadas síncronas onde o cliente aguarda resposta.
+
+**Exemplo**: Listar músicas do catálogo
+
+```
+Cliente → Gateway → catalogo_queue → Serviço Catálogo → Resposta
+```
+
+### 2. **Comunicação Assíncrona**
+
+Operações que não bloqueiam o cliente.
+
+**Exemplo**: Registrar histórico de reprodução
+
+```python
+self.async_publisher.publish("usuarios_queue", request)
+return {"status": "success", "message": "Reprodução registrada assincronamente"}
+```
+
+### 3. **Comunicação Indireta (Broker)**
+
+RabbitMQ medeia toda comunicação entre componentes.
+
+**Filas utilizadas**:
+
+- `gateway_queue`: Recebe requisições do cliente
+- `catalogo_queue`: Processa consultas de músicas
+- `playlists_queue`: Gerencia playlists
+- `usuarios_queue`: Gerencia perfis e histórico
+
+## 📦 Dependências
+
+- `pika==1.3.2`: Cliente Python para RabbitMQ
