@@ -7,7 +7,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from messaging import RPCServer
 import json
 
-# Simulação de banco de dados de músicas
 MUSICAS = [
     {"id": 1, "titulo": "Bohemian Rhapsody", "artista": "Queen", "album": "A Night at the Opera"},
     {"id": 2, "titulo": "Imagine", "artista": "John Lennon", "album": "Imagine"},

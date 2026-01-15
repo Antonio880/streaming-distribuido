@@ -7,7 +7,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from messaging import RPCServer
 import json
 
-# Simulação de banco de dados de usuários e histórico
 USUARIOS = {
     "user1": {"nome": "Antonio", "email": "antonio@example.com"},
     "user2": {"nome": "Maria", "email": "maria@example.com"}

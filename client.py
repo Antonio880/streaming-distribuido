@@ -18,7 +18,7 @@ def main():
     client = RPCClient()
     client.connect()
     
-    user_id = "user1"  # Simulado
+    user_id = "user1"
 
     while True:
         opcao = mostrar_menu()
@@ -49,10 +49,7 @@ def main():
             print("Playlist criada!")
 
         elif opcao == "6":
-            # Primeiro pegamos a lista para o usuário ver
             id_musica = int(input("Digite o ID da música para tocar: "))
-            # Buscando a música localmente na simulação para enviar o objeto (simplificado)
-            # Em um sistema real, o ID seria enviado e o serviço buscaria.
             musica = {"id": id_musica, "titulo": f"Musica {id_musica}"} 
             resposta = client.call("gateway_queue", {
                 "service": "usuarios", 
