@@ -9,6 +9,7 @@ class Gateway:
         
         self.async_publisher = AsyncPublisher()
         self.async_publisher.connect()
+        self.async_publisher.declare_queue("usuarios_async_queue")
 
     def handle_client_request(self, request):
         service = request.get("service")
@@ -21,7 +22,13 @@ class Gateway:
         
         elif service == "usuarios":
             if request.get("action") == "registrar_reproducao":
-                self.async_publisher.publish("usuarios_queue", request)
+                def publish_async():
+                    try:
+                        self.async_publisher.publish("usuarios_async_queue", request)
+                    except Exception as e:
+                        print(f" [!] Erro ao publicar mensagem assíncrona: {e}")
+                
+                threading.Thread(target=publish_async, daemon=True).start()
                 return {"status": "success", "message": "Reprodução registrada assincronamente"}
             
             return self.rpc_client.call("usuarios_queue", request)
