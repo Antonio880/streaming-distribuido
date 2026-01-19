@@ -2,15 +2,41 @@ from messaging import RPCClient
 import time
 import json
 
+def mostrar_musicas(musicas):
+    """Exibe lista de músicas formatada com metadados"""
+    if not musicas:
+        print("Nenhuma música encontrada.")
+        return
+    
+    print(f"\n{'='*80}")
+    for i, musica in enumerate(musicas, 1):
+        print(f"\n{i}. {musica['titulo']}")
+        print(f"   Artista: {musica['artista']}")
+        print(f"   Álbum: {musica['album']}")
+        
+        if 'duracao' in musica:
+            mins = musica['duracao'] // 60
+            secs = musica['duracao'] % 60
+            print(f"   Duração: {mins}:{secs:02d}")
+        
+        if 'preview_url' in musica and musica['preview_url']:
+            print(f"   🎵 Preview: {musica['preview_url']}")
+        
+        if 'capa' in musica:
+            print(f"   🖼️  Capa: {musica['capa']}")
+    
+    print(f"\n{'='*80}")
+
 def mostrar_menu():
     print("\n--- Streaming Distribuído ---")
-    print("1. Listar Músicas")
+    print("1. Listar Músicas (Top Tracks)")
     print("2. Pesquisar Música")
     print("3. Ver meu Perfil")
     print("4. Ver Playlists")
     print("5. Criar Playlist")
     print("6. Tocar Música (Async History)")
     print("7. Ver Histórico")
+    print("8. Adicionar Música à Playlist")
     print("0. Sair")
     return input("Escolha uma opção: ")
 
@@ -19,20 +45,24 @@ def main():
     client.connect()
     
     user_id = "user1"
+    # Armazenamos a última busca de músicas para facilitar a adição por índice
+    ultima_busca = []
 
     while True:
         opcao = mostrar_menu()
         
         if opcao == "1":
+            print("\n🎵 Buscando top tracks no Deezer...")
             resposta = client.call("gateway_queue", {"service": "catalogo", "action": "listar_musicas"})
-            for musica in resposta.get("data", []):
-                print(f"{musica['id']}: {musica['titulo']} - {musica['artista']}")
+            ultima_busca = resposta.get("data", [])
+            mostrar_musicas(ultima_busca)
         
         elif opcao == "2":
-            query = input("Digite o nome ou artista: ")
+            query = input("\n🔍 Digite o nome da música ou artista: ")
+            print(f"\n🎵 Pesquisando '{query}' no Deezer...")
             resposta = client.call("gateway_queue", {"service": "catalogo", "action": "pesquisar", "query": query})
-            for musica in resposta.get("data", []):
-                print(f"{musica['id']}: {musica['titulo']} - {musica['artista']}")
+            ultima_busca = resposta.get("data", [])
+            mostrar_musicas(ultima_busca)
 
         elif opcao == "3":
             resposta = client.call("gateway_queue", {"service": "usuarios", "action": "get_perfil", "user_id": user_id})
@@ -40,8 +70,13 @@ def main():
 
         elif opcao == "4":
             resposta = client.call("gateway_queue", {"service": "playlists", "action": "listar_playlists", "user_id": user_id})
-            for pl in resposta.get("data", []):
-                print(f"{pl['id']}: {pl['nome']} ({len(pl['musicas'])} músicas)")
+            playlists = resposta.get("data", [])
+            if not playlists:
+                print("\nVocê não tem playlists.")
+            for pl in playlists:
+                print(f"\nID: {pl['id']} - Nome: {pl['nome']}")
+                for m in pl['musicas']:
+                    print(f"   - {m['titulo']} ({m['artista']})")
 
         elif opcao == "5":
             nome = input("Nome da playlist: ")
@@ -49,20 +84,64 @@ def main():
             print("Playlist criada!")
 
         elif opcao == "6":
-            id_musica = int(input("Digite o ID da música para tocar: "))
-            musica = {"id": id_musica, "titulo": f"Musica {id_musica}"} 
-            resposta = client.call("gateway_queue", {
-                "service": "usuarios", 
-                "action": "registrar_reproducao", 
-                "user_id": user_id,
-                "musica": musica
-            })
-            print(resposta.get("message", "Tocando..."))
+            if not ultima_busca:
+                print("\nPrimeiro pesquise ou liste músicas (opção 1 ou 2).")
+                continue
+            
+            idx = int(input(f"Digite o número da música (1-{len(ultima_busca)}): ")) - 1
+            if 0 <= idx < len(ultima_busca):
+                musica = ultima_busca[idx]
+                resposta = client.call("gateway_queue", {
+                    "service": "usuarios", 
+                    "action": "registrar_reproducao", 
+                    "user_id": user_id,
+                    "musica": musica
+                })
+                print(f"\n▶️ Tocando agora: {musica['titulo']} - {musica['artista']}")
+                print(resposta.get("message", ""))
+            else:
+                print("Índice inválido.")
 
         elif opcao == "7":
             resposta = client.call("gateway_queue", {"service": "usuarios", "action": "get_historico", "user_id": user_id})
             for musica in resposta.get("data", []):
-                print(f"Ovida: {musica['titulo']}")
+                print(f"Ouvi: {musica['titulo']} - {musica['artista']}")
+
+        elif opcao == "8":
+            if not ultima_busca:
+                print("\nPrimeiro pesquise ou liste músicas (opção 1 ou 2) para escolher uma.")
+                continue
+            
+            # 1. Escolher a música da última busca
+            idx_m = int(input(f"Digite o número da música (1-{len(ultima_busca)}): ")) - 1
+            if not (0 <= idx_m < len(ultima_busca)):
+                print("Música inválida.")
+                continue
+            
+            musica_escolhida = ultima_busca[idx_m]
+
+            # 2. Listar playlists para o usuário escolher o ID
+            print("\nSua(s) Playlist(s):")
+            resp_pl = client.call("gateway_queue", {"service": "playlists", "action": "listar_playlists", "user_id": user_id})
+            playlists = resp_pl.get("data", [])
+            if not playlists:
+                print("Você não tem playlists. Crie uma primeiro (opção 5).")
+                continue
+            
+            for pl in playlists:
+                print(f"ID: {pl['id']} - {pl['nome']}")
+            
+            id_playlist = int(input("\nDigite o ID da playlist onde deseja adicionar: "))
+
+            # 3. Chamar o serviço via gateway
+            client.call("gateway_queue", {
+                "service": "playlists",
+                "action": "adicionar_musica",
+                "user_id": user_id,
+                "playlist_id": id_playlist,
+                "musica": musica_escolhida
+            })
+            print(f"\n✅ '{musica_escolhida['titulo']}' adicionada com sucesso!")
 
         elif opcao == "0":
             break
