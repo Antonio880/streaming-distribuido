@@ -18,30 +18,16 @@ else
     source venv/bin/activate
 fi
 
-echo "Ambiente virtual ativado"
 echo ""
 
 start_service() {
     local service_name=$1
     local command=$2
         
-    if command -v gnome-terminal &> /dev/null; then
-        gnome-terminal --title="$service_name" -- bash -c "source venv/bin/activate && $command; exec bash"
-    elif command -v xterm &> /dev/null; then
-        xterm -title "$service_name" -e "source venv/bin/activate && $command; bash" &
-    elif command -v konsole &> /dev/null; then
-        konsole --title "$service_name" -e bash -c "source venv/bin/activate && $command; exec bash" &
-    else
-        echo "Nenhum emulador de terminal encontrado!"
-        echo "Execute manualmente: $command"
-        return 1
-    fi
+    gnome-terminal --title="$service_name" -- bash -c "source venv/bin/activate && $command; exec bash"
     
     sleep 1
 }
-
-echo "Iniciando serviços distribuídos..."
-echo ""
 
 start_service "Catálogo Service" "python services/catalogo.py"
 start_service "Usuários Service" "python services/usuarios.py"

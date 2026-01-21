@@ -2,7 +2,6 @@ import sys
 import os
 import requests
 
-# Adiciona o diretório pai ao sys.path para permitir a importação de 'messaging'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from messaging import RPCServer
@@ -11,16 +10,6 @@ import json
 DEEZER_API_BASE = "https://api.deezer.com"
 
 def buscar_musicas_deezer(query, limit=15):
-    """
-    Busca músicas na API do Deezer
-    
-    Args:
-        query: Termo de busca (artista, música, álbum)
-        limit: Número máximo de resultados
-    
-    Returns:
-        Lista de músicas formatadas para o sistema
-    """
     try:
         response = requests.get(
             f"{DEEZER_API_BASE}/search",
@@ -30,7 +19,6 @@ def buscar_musicas_deezer(query, limit=15):
         response.raise_for_status()
         data = response.json()
         
-        # Formata os dados no padrão do sistema
         musicas = []
         for track in data.get("data", []):
             musicas.append({
@@ -39,7 +27,7 @@ def buscar_musicas_deezer(query, limit=15):
                 "artista": track["artist"]["name"],
                 "album": track["album"]["title"],
                 "duracao": track["duration"],
-                "preview_url": track.get("preview"),  # 30s de preview MP3
+                "preview_url": track.get("preview"),
                 "capa": track["album"]["cover_medium"]
             })
         
@@ -57,17 +45,15 @@ def handle_request(request):
     action = request.get("action")
     
     if action == "listar_musicas":
-        # Usa o endpoint de charts para pegar os sucessos reais
         try:
             response = requests.get(f"{DEEZER_API_BASE}/chart/0/tracks", timeout=10)
             response.raise_for_status()
             data = response.json()
             
             musicas = []
-            # O endpoint de chart retorna uma lista em data['data'] ou data['tracks']['data']
             tracks = data.get("data", []) if "data" in data else data.get("tracks", {}).get("data", [])
             
-            for track in tracks[:10]: # Limitando a 10 como o usuário pediu
+            for track in tracks[:10]:
                 musicas.append({
                     "id": track["id"],
                     "titulo": track["title"],

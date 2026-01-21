@@ -1,7 +1,6 @@
 import sys
 import os
 
-# Adiciona o diretório pai ao sys.path para permitir a importação de 'messaging'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from messaging import RPCServer
