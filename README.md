@@ -1,40 +1,42 @@
 # Sistema de Streaming Distribuído
 
-Sistema de simulação de plataforma de streaming com arquitetura de microsserviços distribuídos em Python usando RabbitMQ como broker de mensagens.
+Plataforma de streaming musical distribuída com comunicação via RabbitMQ, implementando padrões RPC e mensageria assíncrona.
 
-### Componentes
+## Arquitetura
 
-- **Client** (`client.py`): Interface CLI para simular requisições de usuário
-- **Gateway** (`gateway.py`): Middleware que roteia requisições para os serviços apropriados
-- **Messaging** (`messaging.py`): Biblioteca de abstração para RPC e comunicação assíncrona via RabbitMQ
-- **Serviços** (`services/`):
-  - `catalogo.py`: Gerencia o catálogo de músicas
-  - `playlists.py`: Gerencia playlists dos usuários
-  - `usuarios.py`: Gerencia perfis e histórico de reprodução
+Sistema baseado em **microsserviços** com comunicação **indireta via broker (RabbitMQ)**:
 
-## Como Executar
-
-### Pré-requisitos
-
-- Python 3.10+
-- RabbitMQ rodando em `localhost:5672`
-
-### Instalação Rápida
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-#Aqui ele executa todos os serviços simultaneamente
-chmod +x start.sh
-./start.sh
+```
+Cliente → Gateway → RabbitMQ → Serviços (Catálogo, Playlists, Usuários)
 ```
 
-### Execução Manual
+**Componentes:**
+- **Client**: Interface CLI simulando ações do usuário
+- **Gateway**: Middleware centralizador e roteador de requisições
+- **Messaging**: Abstração para RPC síncrono e publicação assíncrona
+- **Serviços independentes**: Catálogo (API Deezer), Playlists, Usuários/Histórico
 
-Abra **5 terminais** separados e execute (com venv ativado):
+## Dependências
 
+- **Python 3.10+**
+- **RabbitMQ** (localhost:5672)
+- **pika** 1.3.2 - Cliente RabbitMQ
+- **requests** - Integração API Deezer
+
+## Execução
+
+```bash
+# 1. Instalar dependências
+pip install -r requirements.txt
+
+# 2. Iniciar RabbitMQ (Docker ou local)
+docker run -d -p 5672:5672 rabbitmq
+
+# 3. Executar todos os serviços
+chmod +x start.sh && ./start.sh
+```
+
+**Execução manual** (5 terminais):
 ```bash
 python services/catalogo.py
 python services/usuarios.py
@@ -43,40 +45,48 @@ python gateway.py
 python client.py
 ```
 
-## 🔄 Conceitos de Sistemas Distribuídos Implementados
+## Conceitos de Sistemas Distribuídos Implementados
 
-### 1. **RPC (Remote Procedure Call)**
+### 1.Fluxo do Sistema
 
-Chamadas síncronas onde o cliente aguarda resposta.
-
-**Exemplo**: Listar músicas do catálogo
-
+**1. Pesquisar Música (RPC Síncrono):**
 ```
-Cliente → Gateway → catalogo_queue → Serviço Catálogo → Resposta
-```
-
-### 2. **Comunicação Assíncrona**
-
-Operações que não bloqueiam o cliente.
-
-**Exemplo**: Registrar histórico de reprodução
-
-```python
-self.async_publisher.publish("usuarios_queue", request)
-return {"status": "success", "message": "Reprodução registrada assincronamente"}
+Cliente --[pesquisa "Morada"]-->
+  Gateway --[rpc_call]--> 
+    catalogo_queue --> Serviço Catálogo --> API Deezer
+      <--[15 músicas]--
+    <--[resposta]--
+  <--[JSON]--
+Cliente [exibe lista]
 ```
 
-### 3. **Comunicação Indireta (Broker)**
+**2. Tocar Música (Pub/Sub Assíncrono):**
+```
+Cliente --[registrar_reproducao]-->
+  Gateway --[publish async]--> 
+    usuarios_async_queue --> Serviço Usuários [atualiza histórico]
+  <--[confirmação imediata]--
+```
 
-RabbitMQ medeia toda comunicação entre componentes.
+**Filas RabbitMQ:** `gateway_queue`, `catalogo_queue`, `playlists_queue`, `usuarios_queue`, `usuarios_async_queue`
 
-**Filas utilizadas**:
+## Exemplos de Saída
 
-- `gateway_queue`: Recebe requisições do cliente
-- `catalogo_queue`: Processa consultas de músicas
-- `playlists_queue`: Gerencia playlists
-- `usuarios_queue`: Gerencia perfis e histórico
+**Pesquisar música:**
+```
+Digite o nome da música ou artista: Brunão Morada
+Pesquisando 'Brunão Morada' no Deezer...
 
-## Dependências
+1. Ele é
+   Artista: Morada
+   Álbum: Ele é
+   Duração: 5:54
+   🎵 Preview: https://...
+```
 
-- `pika==1.3.2`: Cliente Python para RabbitMQ
+**Ver playlists:**
+```
+ID: 1 - Nome: Favoritas
+   - So tu és santo - Morada
+   - Ele é - Morada
+```

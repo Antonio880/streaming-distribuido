@@ -51,14 +51,14 @@ def main():
         opcao = mostrar_menu()
         
         if opcao == "1":
-            print("\n🎵 Buscando top tracks no Deezer...")
+            print("\nBuscando top tracks no Deezer...")
             resposta = client.call("gateway_queue", {"service": "catalogo", "action": "listar_musicas"})
             ultima_busca = resposta.get("data", [])
             mostrar_musicas(ultima_busca)
         
         elif opcao == "2":
             query = input("\n🔍 Digite o nome da música ou artista: ")
-            print(f"\n🎵 Pesquisando '{query}' no Deezer...")
+            print(f"\nPesquisando '{query}' no Deezer...")
             resposta = client.call("gateway_queue", {"service": "catalogo", "action": "pesquisar", "query": query})
             ultima_busca = resposta.get("data", [])
             mostrar_musicas(ultima_busca)
