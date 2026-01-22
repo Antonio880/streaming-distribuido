@@ -33,7 +33,7 @@ start_service "Catálogo Service" "python services/catalogo.py"
 start_service "Usuários Service" "python services/usuarios.py"
 start_service "Playlists Service" "python services/playlists.py"
 
-sleep 3
+sleep 2
 
 start_service "Gateway" "python gateway.py"
 

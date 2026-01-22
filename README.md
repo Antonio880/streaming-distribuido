@@ -26,13 +26,10 @@ Cliente → Gateway → RabbitMQ → Serviços (Catálogo, Playlists, Usuários)
 ## Execução
 
 ```bash
-# 1. Instalar dependências
 pip install -r requirements.txt
 
-# 2. Iniciar RabbitMQ (Docker ou local)
 docker run -d -p 5672:5672 rabbitmq
 
-# 3. Executar todos os serviços
 chmod +x start.sh && ./start.sh
 ```
 
